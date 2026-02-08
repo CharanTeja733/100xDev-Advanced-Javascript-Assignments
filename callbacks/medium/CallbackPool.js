@@ -6,11 +6,39 @@
 // Each task must resolve with its own result.
 
 class CallbackPool {
-  constructor(limit) {}
+  constructor(limit) {
+    this.limit = limit;
+    this.queue = [];
+    this.running = 0;
+  }
 
-  run(task, onComplete) {}
+  run(task, onComplete) {
+    const handleRequest = (err, result) => {
+      this.running--;
+      this._next();
+      onComplete();
+    };
 
-  _next() {}
+   if(this.running >= this.limit) {
+      this.queue.push(() => {
+        task(handleRequest)
+      });
+      return;
+   }
+    
+    while (this.running < this.limit) {
+        task(handleRequest);
+        this.running++;
+    } 
+
+  }
+
+  _next() {
+    while(this.queue.length && this.running < this.limit) {
+      this.running++;
+      this.queue.shift()();
+    }
+  }
 }
 
 module.exports = CallbackPool;

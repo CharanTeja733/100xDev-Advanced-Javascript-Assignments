@@ -13,11 +13,28 @@
 // - Queue when locked (FIFO).
 // - Auto-release on task completion.
 class Mutex {
-  constructor() {}
+  constructor() {
+    this.queue = [];
+    this.free = true;
+  }
 
-  lock(task, onComplete) {}
+  lock(task, onComplete) {
+    const handleRequest = (err, result) => {
+      this.free = true;
+      onComplete(err, result);
+      this._release();
+    };
 
-  _release() {}
+    this.queue.push(() => {task(handleRequest)});
+    this._release();
+  }
+
+  _release() {
+    if(this.free && this.queue.length) {
+      this.free = false;
+      this.queue.shift()();
+    }
+  }
 }
 
 module.exports = Mutex;

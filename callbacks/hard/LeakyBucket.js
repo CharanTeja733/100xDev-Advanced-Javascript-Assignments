@@ -12,11 +12,59 @@
 // 4. Fairness must be preserved (FIFO execution)
 
 class LeakyBucket {
-  constructor(capacity, leakRateMs) {}
+  constructor(capacity, leakRateMs) {
+    this.capacity = capacity;
+    this.leakRateMs = leakRateMs;
+    this.bucket = [];
+    this.lastRelease = 0;
+    this.notStarted = true;
+    this.intervalId = 0;
+  }
 
-  add(task, onComplete) {}
+  add(task, onComplete) {
+    if(this.bucket.length >= this.capacity) {
+      return onComplete(new Error('Rate Limit Exceeded'), null);
+    }
+    if(this.bucket.length < this.capacity) {
 
-  _process() {}
+      this.bucket.push(() => {
+        task((err, result) => {
+
+          onComplete(err, result);
+
+          if(this.bucket.length === 0 && this.intervalId) {
+            this.notStarted = true;
+            clearInterval(this.intervalId);
+          }
+        })
+      })
+    }  
+
+    this._process();
+  }
+
+  _process() {
+    //gives error for 3rd test case if i start the process execution immediately
+    // if(!this.lastRelease) {
+    //   this.lastRelease = Date.now();
+    //   this.bucket.shift()();
+    // } 
+
+    if(this.notStarted) {
+      this.notStarted = false;
+      this.intervalId = setInterval(() => {
+        if(this.bucket.length === 0) {
+          this.notStarted = true;
+          clearInterval(this.intervalId);
+        }
+        if(Date.now() - this.lastRelease > this.leakRateMs) {
+            this.lastRelease = Date.now();
+            this.bucket.shift()();
+        }
+      }, this.leakRateMs);
+    }
+    
+  }
 }
 
 module.exports = LeakyBucket;

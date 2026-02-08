@@ -4,13 +4,40 @@
 // Any calls made before initialization completes should wait and execute only after the initialization finishes. 
 // Calls made after initialization should run immediately without waiting.
 class GuardedAPI {
-  constructor() {}
+  constructor() {
+    this.initfinished = false;
+    this.queue = [];
+  }
 
-  init(initTask) {}
+  init(initTask) {
+     initTask(() => {
+        this.initfinished = true;
+        this._flush();
+     })
+  }
 
-  call(apiFn, onComplete) {}
+  call(apiFn, onComplete) {
+    if(!this.initfinished) {
+      this.queue.push(() => {
+        apiFn((err, result) => {
+          onComplete(err, result);
+        })
+      })
 
-  _flush() {}
+      return;
+    }
+
+     apiFn((err, result) => {
+        onComplete(err, result);
+      })
+
+  }
+
+  _flush() {
+    while(this.queue.length) {
+      this.queue.shift()();
+    }
+  }
 }
 
 module.exports = GuardedAPI;
