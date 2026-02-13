@@ -16,13 +16,48 @@
 // and file system access control.
 
 class Semaphore {
-  constructor(max) {}
+  constructor(max) {
+    this.maxPermit = max;
+    this.queue = [];
+    this.currPermitCount = 0;
+  }
 
-  acquire() {}
+  acquire() {
+    if(this.currPermitCount < this.maxPermit) {
+      this.currPermitCount++;
+    }
+  }
 
-  release() {}
+  release() {
+    this.currPermitCount--;
+  }
 
-  async run(task) {}
+  async run(task) {
+    const step = () => {
+      while(this.currPermitCount < this.maxPermit && this.queue.length) {
+        this.acquire();
+        const {task, resolve, reject} = this.queue.shift();
+        task()
+        .then((result) => {
+          resolve(result)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+        .finally(() => {
+          this.release();
+          if(this.queue.length) step();
+        })
+        ;
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      this.queue.push({task, resolve, reject});
+      step();
+    })
+      
+  }
 }
 
   module.exports = Semaphore;

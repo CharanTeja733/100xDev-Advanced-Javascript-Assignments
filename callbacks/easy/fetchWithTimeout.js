@@ -22,8 +22,6 @@ function fetchWithTimeout(url, ms, callback) {
             callback(err, data);
         } 
     });
-
-
 }
 
 module.exports = fetchWithTimeout;

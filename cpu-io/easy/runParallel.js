@@ -9,6 +9,24 @@
 // If any of the asynchronous functions reject, the returned promise
 // should immediately reject with that error.
 
-async function runParallel(functions) {}
+async function runParallel(functions) {
+    if(!functions.length) {
+        return [];
+    }
+    const arr = new Array(functions.length);
+
+    const newArr = [];
+
+    for(let i = 0; i < arr.length; i++) {
+        newArr.push(
+            functions[i]()
+            .then((data) => {arr[i] = data;})
+        )
+    }
+
+    await Promise.all(newArr);
+
+    return arr;
+}
 
 module.exports = runParallel;
