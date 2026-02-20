@@ -27,8 +27,8 @@ class CallbackPool {
    }
     
     while (this.running < this.limit) {
-        task(handleRequest);
-        this.running++;
+      this.running++;
+      task(handleRequest); 
     } 
 
   }
